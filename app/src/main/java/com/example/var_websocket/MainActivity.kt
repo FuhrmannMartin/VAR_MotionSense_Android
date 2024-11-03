@@ -5,29 +5,24 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.var_websocket.ui.theme.VAR_WebSocketTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
-    private lateinit var accelerometerManager: AccelerometerManager
+    private lateinit var gyroscopeManager: GyroscopeManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        accelerometerManager = AccelerometerManager(this)
+        gyroscopeManager = GyroscopeManager(this)
 
         enableEdgeToEdge()
         setContent {
@@ -35,7 +30,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     DataSender(
                         modifier = Modifier.padding(innerPadding),
-                        accelerometerManager = accelerometerManager
+                        gyroscopeManager = gyroscopeManager
                     )
                 }
             }
@@ -44,95 +39,66 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        accelerometerManager.stopListening()
+        gyroscopeManager.stopListening()
+        //closeWebSocket() // Ensure WebSocket is closed when activity is destroyed
     }
 }
 
 @Composable
-fun DataSender(modifier: Modifier = Modifier, accelerometerManager: AccelerometerManager) {
+fun DataSender(modifier: Modifier = Modifier, gyroscopeManager: GyroscopeManager) {
     val scope = rememberCoroutineScope()
-    val x by accelerometerManager.posX
-    val y by accelerometerManager.posY
-    val z by accelerometerManager.posZ
-    var color by remember { mutableStateOf(Color.Red) }
+    var isConnected by remember { mutableStateOf(false) }
+    var speed by remember { mutableStateOf(0.0f) } // Initialize speed control variable
 
-    // Connect WebSocket on initial load
-    LaunchedEffect(Unit) {
-        connectWebSocket()
-    }
-
-    // UI Elements
     Column(modifier = modifier) {
-        Text("X: ${x.roundToInt()}, Y: ${y.roundToInt()}, Z: ${z.roundToInt()}")
+        // Display current orientation
+        Text("Rotation X: ${gyroscopeManager.rotX.value}, Y: ${gyroscopeManager.rotY.value}, Z: ${gyroscopeManager.rotZ.value}")
 
-        Spacer(modifier = Modifier.height(8.dp))
+        // Speed Control
+        Slider(
+            value = speed,
+            onValueChange = { speed = it },
+            valueRange = 0.0f..1.0f, // Example speed range
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+        Text("Speed: ${speed}")
 
-        Text("Choose Color:")
-        ColorPicker { color = it }
+        Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(Modifier.height(16.dp))
+        // Reconnect Button
+        Button(onClick = {
+            scope.launch {
+                reconnectWebSocket()
+                isConnected = true
+            }
+        }) {
+            Text("Reconnect")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Continuous data sending using LaunchedEffect
-        LaunchedEffect(Unit) {
-            while (true) {
-                scope.launch {
-                    sendData(x, y, z, color)
-                }
-                delay(500) // Adjust delay as needed for sending frequency
+        LaunchedEffect(isConnected) {
+            if (!isConnected) {
+                connectWebSocket()
+                isConnected = true
             }
-        }
-
-        Button(onClick = {
-            scope.launch {
-                sendData(x, y, z, color)
-            }
-        }) {
-            Text("DRAW")
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Button(onClick = {
-            accelerometerManager.resetPosition()
-        }) {
-            Text("Reset Origin")
-        }
-    }
-
-    // Close WebSocket on Dispose
-    DisposableEffect(Unit) {
-        onDispose {
-            scope.launch {
-                closeWebSocket()
+            while (isConnected) {
+                sendData(
+                    gyroscopeManager.rotX.value,
+                    gyroscopeManager.rotY.value,
+                    gyroscopeManager.rotZ.value,
+                    speed
+                )
+                delay(16) // Approx. 60 updates per second
             }
         }
     }
 }
 
-@Composable
-fun ColorPicker(onColorChange: (Color) -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        listOf(Color.Red, Color.Green, Color.Blue, Color.Yellow, Color.Cyan).forEach { color ->
-            Box(
-                modifier = Modifier
-                    .size(50.dp)
-                    .background(color)
-                    .padding(8.dp)
-                    .clickable { onColorChange(color) }
-            )
-        }
-    }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun SenderPreview() {
-    VAR_WebSocketTheme {
-        DataSender(accelerometerManager = AccelerometerManager(context = LocalContext.current))
-    }
+// Reconnect function to safely reconnect WebSocket
+suspend fun reconnectWebSocket() {
+    closeWebSocket() // Close existing connection if any
+    connectWebSocket() // Reconnect to the WebSocket server
 }

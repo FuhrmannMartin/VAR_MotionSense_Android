@@ -12,9 +12,9 @@ val client = HttpClient(CIO) {
 
 var webSocketSession: WebSocketSession? = null
 
-suspend fun connectWebSocket() {
+suspend fun connectWebSocket(ipAddress: String) {
     try {
-        webSocketSession = client.webSocketSession(host = "192.168.178.129", port = 3000, path = "/ws")
+        webSocketSession = client.webSocketSession(host = ipAddress, port = 3000, path = "/ws")
         println("WebSocket connected")
     } catch (e: Exception) {
         println("Error connecting WebSocket: ${e.localizedMessage}")

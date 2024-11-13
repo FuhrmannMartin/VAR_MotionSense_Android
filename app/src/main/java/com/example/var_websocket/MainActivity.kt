@@ -23,10 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -44,8 +42,8 @@ import androidx.compose.ui.layout.ContentScale
 
 class SharedViewModel : ViewModel() {
     // Der State, der von mehreren Composables geteilt wird
-    var ipAddress = mutableStateOf("192.168.178.129");
-    var isConnected = mutableStateOf(false)
+    val ipAddress = mutableStateOf("192.168.178.129");
+    val isConnected = mutableStateOf(false)
 }
 
 
@@ -81,6 +79,7 @@ fun MainScreen(modifier: Modifier = Modifier, gyroscopeManager: GyroscopeManager
 
     // Erstelle eine NavController-Instanz
     val navController = rememberNavController()
+    val sharedViewModel: SharedViewModel = viewModel()
 
     // NavHost: Definiert die verfügbaren Routen (Screens) und ihre zugehörigen Composables
     NavHost(
@@ -88,15 +87,15 @@ fun MainScreen(modifier: Modifier = Modifier, gyroscopeManager: GyroscopeManager
         startDestination = "home"
     ) {
         // Home Screen
-        composable("home") { DataSender(navController, modifier, gyroscopeManager) }
+        composable("home") { DataSender(navController, modifier, gyroscopeManager, sharedViewModel) }
 
         // Settings Screen
-        composable("settings") { SettingsScreen(navController) }
+        composable("settings") { SettingsScreen(navController, sharedViewModel) }
     }
 }
 
 @Composable
-fun SettingsScreen(navController: NavHostController, viewModel: SharedViewModel = viewModel()){
+fun SettingsScreen(navController: NavHostController, viewModel: SharedViewModel){
     val activity = LocalContext.current as ComponentActivity
     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
@@ -117,8 +116,8 @@ fun SettingsScreen(navController: NavHostController, viewModel: SharedViewModel 
         // Reconnect Button
         Button(onClick = {
             scope.launch {
-                reconnectWebSocket(viewModel.ipAddress.value)
-                viewModel.isConnected.value = true
+
+                reconnectWebSocket(viewModel.ipAddress.value,viewModel)
                 navController.navigate("home")
             }
         }) {
@@ -130,7 +129,7 @@ fun SettingsScreen(navController: NavHostController, viewModel: SharedViewModel 
 
 
 @Composable
-fun DataSender(navController: NavHostController, modifier: Modifier = Modifier, gyroscopeManager: GyroscopeManager, viewModel: SharedViewModel = viewModel()) {
+fun DataSender(navController: NavHostController, modifier: Modifier = Modifier, gyroscopeManager: GyroscopeManager, viewModel: SharedViewModel) {
 
     val activity = LocalContext.current as ComponentActivity
     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
@@ -223,9 +222,9 @@ fun DataSender(navController: NavHostController, modifier: Modifier = Modifier, 
 
 
 // Reconnect function to safely reconnect WebSocket
-suspend fun reconnectWebSocket(ipAddress: String) {
+suspend fun reconnectWebSocket(ipAddress: String, viewModel: SharedViewModel) {
     closeWebSocket() // Close existing connection if any
-    connectWebSocket(ipAddress) // Reconnect to the WebSocket server
+    connectWebSocket(ipAddress, viewModel) // Reconnect to the WebSocket server
 }
 
 @Composable

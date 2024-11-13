@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -22,8 +23,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -34,6 +38,9 @@ import androidx.navigation.compose.rememberNavController
 import com.example.var_websocket.ui.theme.VAR_WebSocketTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.layout.ContentScale
+
+
 
 class SharedViewModel : ViewModel() {
     // Der State, der von mehreren Composables geteilt wird
@@ -129,71 +136,90 @@ fun DataSender(navController: NavHostController, modifier: Modifier = Modifier, 
     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
 
-    val screenHeight = (LocalConfiguration.current.screenHeightDp-30) // Bildschirmbreite in dp
+    val screenHeight = (LocalConfiguration.current.screenHeightDp - 30) // Bildschirmbreite in dp
     val offsetY = (screenHeight / 2)
 
 
     var speed by remember { mutableStateOf(0.0f) } // Initialize speed control variable
+    Box(
+        modifier = Modifier.fillMaxSize()  // Box füllt den gesamten Bildschirm
+    ) {
 
-    Row(modifier = Modifier.fillMaxWidth()) {
-
-        Column() {
-
-            Row(modifier = Modifier.padding(30.dp)) {
-                SettingsIcon(
-                    onSettingsClick = {
-                        navController.navigate("settings")
-                    }
-                )
-                // Display current orientation
-                Column {
-                    Row {                 Text("is connected:")
-                        StatusIndicator(viewModel.isConnected.value) }
-                    Text("Speed: ${speed}")
-                }
-
-            }
+        Image(
+            painter = painterResource(id = R.drawable.cockpit),  // Bild aus den Ressourcen
+            contentDescription = null,  // Keine Beschreibung für rein dekorative Bilder
+            modifier = Modifier.fillMaxSize(),  // Bild füllt die gesamte Größe aus
+            contentScale = ContentScale.Crop  // Bild wird skaliert, um den Bildschirm zu füllen
+        )
 
 
+        Row(modifier = Modifier.fillMaxWidth()) {
 
+            Column() {
 
-
-            // Continuous data sending using LaunchedEffect
-            LaunchedEffect(viewModel.isConnected.value) {
-                if (!viewModel.isConnected.value) {
-                    //connectWebSocket("192.168.178.129")
-                    //viewModel.isConnected.value = true
-                }
-                while (viewModel.isConnected.value) {
-                    sendData(
-                        gyroscopeManager.rotX.value,
-                        gyroscopeManager.rotY.value,
-                        gyroscopeManager.rotZ.value,
-                        speed
+                Row(modifier = Modifier.padding(30.dp).background(Color.White)) {
+                    SettingsIcon(
+                        onSettingsClick = {
+                            navController.navigate("settings")
+                        }
                     )
-                    delay(16) // Approx. 60 updates per second
+                    // Display current orientation
+                    Column {
+                        Row {
+                            Text("is connected:")
+                            StatusIndicator(viewModel.isConnected.value)
+                        }
+                        Text("Thrust: ${String.format("%.1f", speed * 100)} %")
+                    }
+
+                }
+
+
+                // Continuous data sending using LaunchedEffect
+                LaunchedEffect(viewModel.isConnected.value) {
+                    if (!viewModel.isConnected.value) {
+                        //connectWebSocket("192.168.178.129")
+                        //viewModel.isConnected.value = true
+                    }
+                    while (viewModel.isConnected.value) {
+                        sendData(
+                            gyroscopeManager.rotX.value,
+                            gyroscopeManager.rotY.value,
+                            gyroscopeManager.rotZ.value,
+                            speed
+                        )
+                        delay(16) // Approx. 60 updates per second
+                    }
                 }
             }
+
+            /*
+        Image(
+            bitmap = ImageBitmap.imageResource(id = R.drawable.cockpit),
+            contentDescription = "Beschreibung des Bildes",
+            modifier = Modifier.size(100.dp), // Größe des Bildes anpassen
+            contentScale = ContentScale.Crop  // Zuschneide-Optionen
+        )
+
+*/
+
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Speed Control
+            Box(modifier = Modifier.rotate(-90f).offset(x = -(offsetY).dp, y = (offsetY - 55).dp)) {
+                Slider(
+                    value = speed,
+                    onValueChange = { speed = it },
+                    valueRange = 0.0f..1.0f, // Example speed range
+                    modifier = Modifier.width((LocalConfiguration.current.screenHeightDp - 30).dp)
+                )
+            }
+            //Spacer(modifier = Modifier.height(16.dp))
         }
-
-
-
-
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Speed Control
-        Box(modifier = Modifier.rotate(-90f).offset(x = -(offsetY).dp, y = (offsetY-55).dp)) {
-            Slider(
-                value = speed,
-                onValueChange = { speed = it },
-                valueRange = 0.0f..1.0f, // Example speed range
-                modifier = Modifier.width((LocalConfiguration.current.screenHeightDp-30).dp)
-            )
-        }
-        //Spacer(modifier = Modifier.height(16.dp))
     }
 }
+
 
 
 // Reconnect function to safely reconnect WebSocket

@@ -43,6 +43,7 @@ import androidx.compose.ui.layout.ContentScale
 class SharedViewModel : ViewModel() {
     // Der State, der von mehreren Composables geteilt wird
     val ipAddress = mutableStateOf("192.168.178.129");
+    val port = mutableStateOf("3000");
     val isConnected = mutableStateOf(false)
 }
 
@@ -111,6 +112,12 @@ fun SettingsScreen(navController: NavHostController, viewModel: SharedViewModel)
             value = viewModel.ipAddress.value,
             onValueChange = { viewModel.ipAddress.value = it },
             label = { Text("IP Address") }
+        )
+
+        TextField(
+            value = viewModel.port.value,
+            onValueChange = { viewModel.port.value = it },
+            label = { Text("Port") }
         )
 
         // Reconnect Button
@@ -224,7 +231,7 @@ fun DataSender(navController: NavHostController, modifier: Modifier = Modifier, 
 // Reconnect function to safely reconnect WebSocket
 suspend fun reconnectWebSocket(ipAddress: String, viewModel: SharedViewModel) {
     closeWebSocket() // Close existing connection if any
-    connectWebSocket(ipAddress, viewModel) // Reconnect to the WebSocket server
+    connectWebSocket(ipAddress,viewModel.port.value.toInt(), viewModel) // Reconnect to the WebSocket server
 }
 
 @Composable

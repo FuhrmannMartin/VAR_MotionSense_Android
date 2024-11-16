@@ -12,9 +12,9 @@ val client = HttpClient(CIO) {
 
 var webSocketSession: WebSocketSession? = null
 
-suspend fun connectWebSocket(ipAddress: String, viewModel: SharedViewModel) {
+suspend fun connectWebSocket(ipAddress: String, port: Int, viewModel: SharedViewModel) {
     try {
-        webSocketSession = client.webSocketSession(host = ipAddress, port = 3000, path = "/ws")
+        webSocketSession = client.webSocketSession(host = ipAddress, port = port, path = "/ws")
         println("WebSocket connected")
         viewModel.isConnected.value = true
     } catch (e: Exception) {

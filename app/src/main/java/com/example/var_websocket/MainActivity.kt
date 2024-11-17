@@ -142,7 +142,7 @@ fun DataSender(navController: NavHostController, modifier: Modifier = Modifier, 
     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
 
-    val screenHeight = (LocalConfiguration.current.screenHeightDp - 30) // Bildschirmbreite in dp
+    val screenHeight = (LocalConfiguration.current.screenHeightDp - 70) // Bildschirmbreite in dp
     val offsetY = (screenHeight / 2)
 
 

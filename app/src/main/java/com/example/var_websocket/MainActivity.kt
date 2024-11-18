@@ -74,6 +74,53 @@ fun DataSender(modifier: Modifier = Modifier, gyroscopeManager: GyroscopeManager
         }) {
             Text("Reconnect")
         }
+    }
+}
+
+@Composable
+fun DataSender(navController: NavHostController, modifier: Modifier = Modifier, gyroscopeManager: GyroscopeManager, viewModel: SharedViewModel) {
+
+    val activity = LocalContext.current as ComponentActivity
+    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+
+
+    val screenHeight = (LocalConfiguration.current.screenHeightDp - 70) // Bildschirmbreite in dp
+    val offsetY = (screenHeight / 2)
+
+
+    var speed by remember { mutableStateOf(0.0f) } // Initialize speed control variable
+    Box(
+        modifier = Modifier.fillMaxSize()  // Box füllt den gesamten Bildschirm
+    ) {
+
+        Image(
+            painter = painterResource(id = R.drawable.cockpit),  // Bild aus den Ressourcen
+            contentDescription = null,  // Keine Beschreibung für rein dekorative Bilder
+            modifier = Modifier.fillMaxSize(),  // Bild füllt die gesamte Größe aus
+            contentScale = ContentScale.Crop  // Bild wird skaliert, um den Bildschirm zu füllen
+        )
+
+
+        Row(modifier = Modifier.fillMaxWidth()) {
+
+            Column() {
+
+                Row(modifier = Modifier.padding(30.dp).background(Color.White)) {
+                    SettingsIcon(
+                        onSettingsClick = {
+                            navController.navigate("settings")
+                        }
+                    )
+                    // Display current orientation
+                    Column {
+                        Row {
+                            Text("is connected:")
+                            StatusIndicator(viewModel.isConnected.value)
+                        }
+                        Text("Thrust: ${String.format("%.1f", speed * 100)} %")
+                    }
+
+                }
 
         Spacer(modifier = Modifier.height(16.dp))
 

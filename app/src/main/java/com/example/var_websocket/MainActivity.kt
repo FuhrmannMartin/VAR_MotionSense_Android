@@ -1,7 +1,8 @@
 package com.example.var_websocket
 
 import android.content.pm.ActivityInfo
-import android.health.connect.datatypes.units.Length
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -31,7 +33,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.var_websocket.ui.theme.VAR_WebSocketTheme
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -75,7 +76,17 @@ fun Screen(modifier: Modifier = Modifier) {
             .fillMaxSize()
             .padding(24.dp)
     ) {
-        // Connection status
+        // === TOP LEFT LOGO ===
+        Image(
+            painter = painterResource(id = R.drawable.stepback_logo),
+            contentDescription = "STEPBACK Logo",
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 100.dp, top = 30.dp)
+                .size(170.dp)
+        )
+
+        // === TOP RIGHT CONNECTION STATUS ===
         Text(
             text = if (isConnected) "🟢 Connected" else "🔴 Disconnected",
             style = MaterialTheme.typography.labelLarge,
@@ -84,7 +95,7 @@ fun Screen(modifier: Modifier = Modifier) {
                 .padding(4.dp)
         )
 
-        // Game UI
+        // === CENTERED GAME UI ===
         Column(
             modifier = Modifier.align(Alignment.Center),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -122,7 +133,6 @@ fun Screen(modifier: Modifier = Modifier) {
                 Text(text = statusText, textAlign = TextAlign.Center)
             }
 
-
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Button(
                     onClick = {
@@ -157,7 +167,6 @@ fun Screen(modifier: Modifier = Modifier) {
                 ) {
                     Text(if (isGameActive) "🔁 Restart" else "▶ Start")
                 }
-
 
                 if (isGameActive) {
                     Button(onClick = { BasketballGame.manualMiss() }) {
